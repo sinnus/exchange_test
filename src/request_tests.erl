@@ -16,6 +16,7 @@ server_test() ->
     ?assert(Request1#request_price_count.count =:= 1),
 
     ok = request_server:add_buy_request(Pid, "user2", 10),
+    ok = request_server:add_buy_request(Pid, "user3", 10),
     ok = request_server:add_buy_request(Pid, "user1", 23),
 
     {Top10BuyRequests2, []} = request_server:get_top10_requests(Pid),
@@ -23,9 +24,31 @@ server_test() ->
     [Request2, Request3] = Top10BuyRequests2,
 
     ?assert(Request2#request_price_count.price =:= 10),
-    ?assert(Request2#request_price_count.count =:= 2),
+    ?assert(Request2#request_price_count.count =:= 3),
 
     ?assert(Request3#request_price_count.price =:= 23),
     ?assert(Request3#request_price_count.count =:= 1),
+
+    ok = request_server:add_buy_request(Pid, "user1", 1),
+    ok = request_server:add_buy_request(Pid, "user1", 2),
+    ok = request_server:add_buy_request(Pid, "user1", 3),
+    ok = request_server:add_buy_request(Pid, "user1", 4),
+    ok = request_server:add_buy_request(Pid, "user1", 5),
+    ok = request_server:add_buy_request(Pid, "user1", 6),
+    ok = request_server:add_buy_request(Pid, "user1", 7),
+    ok = request_server:add_buy_request(Pid, "user1", 8),
+    ok = request_server:add_buy_request(Pid, "user1", 9),
+    ok = request_server:add_buy_request(Pid, "user1", 10),
+
+    {Top10BuyRequests3, []} = request_server:get_top10_requests(Pid),
+    ?assert(10 =:= length(Top10BuyRequests3)),
+
+    Request4 = lists:nth(1, Top10BuyRequests3),
+    ?assert(Request4#request_price_count.price =:= 1),
+    ?assert(Request4#request_price_count.count =:= 1),
+
+    Request5 = lists:nth(10, Top10BuyRequests3),
+    ?assert(Request5#request_price_count.price =:= 10),
+    ?assert(Request5#request_price_count.count =:= 4),
 
     request_server:stop(Pid).
