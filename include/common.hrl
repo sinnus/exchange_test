@@ -7,3 +7,5 @@
 		      price,
 		      buy_price,
 		      sell_price}).
+
+-record(request_price_count, {price, count}).

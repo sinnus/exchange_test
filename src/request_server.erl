@@ -8,6 +8,7 @@
 -module(request_server).
 
 -behaviour(gen_server).
+-include("common.hrl").
 
 %% API
 -export([start_link/1,
@@ -21,9 +22,10 @@
 	 terminate/2, code_change/3]).
 
 -record(state, {tool_name,
-	        requests2buy,
-		requests2sell}).
-
+	        requests_buy,
+		requests_sell,
+		price_buy2count,
+		price_sell2count}).
 %%====================================================================
 %% API
 %%====================================================================
@@ -62,8 +64,10 @@ get_top10_requests(Pid) ->
 %%--------------------------------------------------------------------
 init([ToolName]) ->
     {ok, #state{tool_name = ToolName,
-		requests2buy = [],
-		requests2sell = []
+		requests_buy = [],
+		requests_sell = [],
+		price_buy2count = dict:new(),
+		price_sell2count = dict:new()
 	       }}.
 
 %%--------------------------------------------------------------------
@@ -75,6 +79,34 @@ init([ToolName]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({add_buy_request, UserName, Price}, _From, State) ->
+    Requests_Buy = State#state.requests_buy,
+    Request = #request{created_date = erlang:now(),
+		       user_name = UserName,
+		       price = Price},
+
+    Dict1 = dict:update_counter(Price, 1, State#state.price_buy2count),
+
+    State1 = State#state{requests_buy = [Request|Requests_Buy],
+			 price_buy2count = Dict1},
+    Reply = ok,
+    {reply, Reply, State1};
+
+handle_call({get_top10_requests}, _From, State) ->
+    PriceCountList = dict:to_list(State#state.price_buy2count),
+    SortedList = lists:sort(fun({Price1, _}, {Price2, _}) ->
+				    Price1 =< Price2
+			    end, PriceCountList),
+    
+    Top10List = lists:sublist(SortedList, 10),
+
+    Top10PriceCountList =  lists:map(fun({Price, Count}) ->
+					     #request_price_count{price = Price, count = Count}
+				     end, Top10List),
+
+    Reply = {Top10PriceCountList, []},
+    {reply, Reply, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
