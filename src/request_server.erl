@@ -83,28 +83,36 @@ handle_call({add_buy_request, UserName, Price}, _From, State) ->
     Requests_Buy = State#state.requests_buy,
     Request = #request{created_date = erlang:now(),
 		       user_name = UserName,
+		       type = buy,
 		       price = Price},
 
-    Dict1 = dict:update_counter(Price, 1, State#state.price_buy2count),
-
-    State1 = State#state{requests_buy = [Request|Requests_Buy],
-			 price_buy2count = Dict1},
-    Reply = ok,
-    {reply, Reply, State1};
+    case try_make_transaction(Request) of
+	true ->
+	    {reply, ok, State};
+	false ->
+	    Dict1 = dict:update_counter(Price, 1, State#state.price_buy2count),
+	    State1 = State#state{requests_buy = [Request|Requests_Buy],
+				 price_buy2count = Dict1},
+	    {reply, ok, State1}
+    end;
 
 %% TODO: Remove code duplication
 handle_call({add_sell_request, UserName, Price}, _From, State) ->
     Requests_Sell = State#state.requests_sell,
     Request = #request{created_date = erlang:now(),
 		       user_name = UserName,
+		       type = sell,
 		       price = Price},
-
-    Dict1 = dict:update_counter(Price, 1, State#state.price_sell2count),
-
-    State1 = State#state{requests_sell = [Request|Requests_Sell],
-			 price_sell2count = Dict1},
-    Reply = ok,
-    {reply, Reply, State1};
+    
+    case try_make_transaction(Request) of
+	true ->
+	    {reply, ok, State};
+	false ->
+	    Dict1 = dict:update_counter(Price, 1, State#state.price_sell2count),
+	    State1 = State#state{requests_buy = [Request|Requests_Sell],
+				 price_sell2count = Dict1},
+	    {reply, ok, State1}
+    end;
 
 handle_call({get_top10_requests}, _From, State) ->
     Top10BuyList = fetch_top10_requests(State#state.price_buy2count, asc),
@@ -116,6 +124,12 @@ handle_call({get_top10_requests}, _From, State) ->
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
+
+try_make_transaction(Request) when Request#request.type == sell->
+    false;
+
+try_make_transaction(Request) when Request#request.type == buy->
+    false.
 
 fetch_top10_requests(Dict, Order) ->
     PriceCountList = dict:to_list(Dict),

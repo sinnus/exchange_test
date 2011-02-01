@@ -1,5 +1,6 @@
 -record(request, {created_date,
 		  user_name,
+		  type,
 		  price}).
 
 -record(transaction, {create_date,
