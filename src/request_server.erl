@@ -86,7 +86,7 @@ handle_call({add_buy_request, UserName, Price}, _From, State) ->
 		       type = buy,
 		       price = Price},
 
-    case try_make_transaction(Request) of
+    case try_make_transaction(Request, State#state.requests_sell) of
 	true ->
 	    {reply, ok, State};
 	false ->
@@ -104,7 +104,7 @@ handle_call({add_sell_request, UserName, Price}, _From, State) ->
 		       type = sell,
 		       price = Price},
     
-    case try_make_transaction(Request) of
+    case try_make_transaction(Request, State#state.requests_buy) of
 	true ->
 	    {reply, ok, State};
 	false ->
@@ -125,11 +125,27 @@ handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
-try_make_transaction(Request) when Request#request.type == sell->
-    false;
+%% ------------------------
+%% Internal funcs
+%% ------------------------
+try_make_transaction(Request, InRequests) when Request#request.type == sell->
+    Sorted = lists:sort(fun(Elem1, Elem2) ->
+				{Elem1#request.created_date, Elem1#request.price} =<
+				    {Elem2#request.created_date, Elem2#request.price}
+			end, InRequests),
 
-try_make_transaction(Request) when Request#request.type == buy->
+    case find_low_price(Request#request.price, Sorted) of
+	none ->
+	    false;
+	BuyRequest ->
+	    true
+    end;
+
+try_make_transaction(Request, InRequests) when Request#request.type == buy->
     false.
+
+find_low_price(Price, SortedRequests) ->
+    none.
 
 fetch_top10_requests(Dict, Order) ->
     PriceCountList = dict:to_list(Dict),
