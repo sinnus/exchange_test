@@ -92,24 +92,48 @@ handle_call({add_buy_request, UserName, Price}, _From, State) ->
     Reply = ok,
     {reply, Reply, State1};
 
+%% TODO: Remove code duplication
+handle_call({add_sell_request, UserName, Price}, _From, State) ->
+    Requests_Sell = State#state.requests_sell,
+    Request = #request{created_date = erlang:now(),
+		       user_name = UserName,
+		       price = Price},
+
+    Dict1 = dict:update_counter(Price, 1, State#state.price_sell2count),
+
+    State1 = State#state{requests_sell = [Request|Requests_Sell],
+			 price_sell2count = Dict1},
+    Reply = ok,
+    {reply, Reply, State1};
+
 handle_call({get_top10_requests}, _From, State) ->
-    PriceCountList = dict:to_list(State#state.price_buy2count),
-    SortedList = lists:sort(fun({Price1, _}, {Price2, _}) ->
-				    Price1 =< Price2
-			    end, PriceCountList),
-    
-    Top10List = lists:sublist(SortedList, 10),
+    Top10BuyList = fetch_top10_requests(State#state.price_buy2count, asc),
+    Top10SellList = fetch_top10_requests(State#state.price_sell2count, desc),
 
-    Top10PriceCountList =  lists:map(fun({Price, Count}) ->
-					     #request_price_count{price = Price, count = Count}
-				     end, Top10List),
-
-    Reply = {Top10PriceCountList, []},
+    Reply = {Top10BuyList, Top10SellList},
     {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
+
+fetch_top10_requests(Dict, Order) ->
+    PriceCountList = dict:to_list(Dict),
+    SortedList = lists:sort(fun({Price1, _}, {Price2, _}) ->
+				    case Order of
+					asc ->
+					    Price1 =< Price2;
+					desc ->
+					    Price2 =< Price1
+				    end
+			    end, PriceCountList),
+    
+    Top10List = lists:sublist(SortedList, 10),
+    
+    Top10PriceCountList =  lists:map(fun({Price, Count}) ->
+					     #request_price_count{price = Price, count = Count}
+				     end, Top10List),
+    Top10PriceCountList.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |

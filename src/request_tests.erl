@@ -3,9 +3,10 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("common.hrl").
 
-server_test() ->
+add_get_test() ->
     {ok, Pid} = request_server:start_link("tool1"),
 
+    %% Buy test
     ok = request_server:add_buy_request(Pid, "user1", 10),
 
     {Top10BuyRequests1, []} = request_server:get_top10_requests(Pid),
@@ -50,5 +51,20 @@ server_test() ->
     Request5 = lists:nth(10, Top10BuyRequests3),
     ?assert(Request5#request_price_count.price =:= 10),
     ?assert(Request5#request_price_count.count =:= 4),
+    
+    %% Sell test
+    ok = request_server:add_sell_request(Pid, "user1", 666),
+    {_, [Request6]} = request_server:get_top10_requests(Pid),
+    ?assert(Request6#request_price_count.price =:= 666),
+    ?assert(Request6#request_price_count.count =:= 1),
+
+    ok = request_server:add_sell_request(Pid, "user1", 666),
+    ok = request_server:add_sell_request(Pid, "user1", 111),
+
+    {_, [Request7, Request8]} = request_server:get_top10_requests(Pid),
+    ?assert(Request7#request_price_count.price =:= 666),
+    ?assert(Request7#request_price_count.count =:= 2),
+    ?assert(Request8#request_price_count.price =:= 111),
+    ?assert(Request8#request_price_count.count =:= 1),
 
     request_server:stop(Pid).
