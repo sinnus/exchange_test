@@ -149,7 +149,7 @@ try_make_sell_transaction(Request, State) ->
 			_ ->
 			    Dict1
 		    end,
-	    
+
 	    State1 = State#state{requests_buy = ordsets:del_element(BuyRequest,  State#state.requests_buy),
 				 price_buy2count = Dict2},
 	    {true, State1}
