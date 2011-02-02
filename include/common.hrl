@@ -1,4 +1,5 @@
--record(request, {created_date,
+-record(request, {id,
+		  created_date,
 		  user_name,
 		  type,
 		  price}).

@@ -25,7 +25,8 @@
 	        requests_buy,
 		requests_sell,
 		price_buy2count,
-		price_sell2count}).
+		price_sell2count,
+		seq_value}).
 %%====================================================================
 %% API
 %%====================================================================
@@ -64,10 +65,11 @@ get_top10_requests(Pid) ->
 %%--------------------------------------------------------------------
 init([ToolName]) ->
     {ok, #state{tool_name = ToolName,
-		requests_buy = [],
-		requests_sell = [],
+		requests_buy = ordsets:new(),
+		requests_sell = ordsets:new(),
 		price_buy2count = dict:new(),
-		price_sell2count = dict:new()
+		price_sell2count = dict:new(),
+		seq_value = 1
 	       }}.
 
 %%--------------------------------------------------------------------
@@ -80,38 +82,40 @@ init([ToolName]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({add_buy_request, UserName, Price}, _From, State) ->
-    Requests_Buy = State#state.requests_buy,
-    Request = #request{created_date = erlang:now(),
+    Request = #request{id = State#state.seq_value,
+		       created_date = erlang:now(),
 		       user_name = UserName,
 		       type = buy,
 		       price = Price},
 
-    case try_make_transaction(Request, State#state.requests_sell) of
-	true ->
-	    {reply, ok, State};
-	false ->
-	    Dict1 = dict:update_counter(Price, 1, State#state.price_buy2count),
-	    State1 = State#state{requests_buy = [Request|Requests_Buy],
-				 price_buy2count = Dict1},
-	    {reply, ok, State1}
+    case try_make_buy_transaction(Request, State) of
+	{true, State1} ->
+	    {reply, ok, State1};
+	{false, State1} ->
+	    Dict1 = dict:update_counter(Price, 1, State1#state.price_buy2count),
+	    State2 = State1#state{requests_buy = ordsets:add_element(Request, State1#state.requests_buy),
+				  price_buy2count = Dict1,
+				  seq_value = State1#state.seq_value + 1},
+	    {reply, ok, State2}
     end;
 
 %% TODO: Remove code duplication
 handle_call({add_sell_request, UserName, Price}, _From, State) ->
-    Requests_Sell = State#state.requests_sell,
-    Request = #request{created_date = erlang:now(),
+    Request = #request{id = State#state.seq_value,
+		       created_date = erlang:now(),
 		       user_name = UserName,
 		       type = sell,
 		       price = Price},
     
-    case try_make_transaction(Request, State#state.requests_buy) of
-	true ->
-	    {reply, ok, State};
-	false ->
-	    Dict1 = dict:update_counter(Price, 1, State#state.price_sell2count),
-	    State1 = State#state{requests_buy = [Request|Requests_Sell],
-				 price_sell2count = Dict1},
-	    {reply, ok, State1}
+    case try_make_sell_transaction(Request, State) of
+	{true, State1} ->
+	    {reply, ok, State1};
+	{false, State1} ->
+	    Dict1 = dict:update_counter(Price, 1, State1#state.price_sell2count),
+	    State2 = State1#state{requests_sell = ordsets:add_element(Request, State1#state.requests_sell),
+				  price_sell2count = Dict1,
+				  seq_value = State1#state.seq_value + 1},
+	    {reply, ok, State2}
     end;
 
 handle_call({get_top10_requests}, _From, State) ->
@@ -128,24 +132,32 @@ handle_call(_Request, _From, State) ->
 %% ------------------------
 %% Internal funcs
 %% ------------------------
-try_make_transaction(Request, InRequests) when Request#request.type == sell->
+try_make_sell_transaction(Request, State) ->
     Sorted = lists:sort(fun(Elem1, Elem2) ->
-				{Elem1#request.created_date, Elem1#request.price} =<
-				    {Elem2#request.created_date, Elem2#request.price}
-			end, InRequests),
+				{Elem1#request.price, Elem1#request.created_date} =<
+				    {Elem2#request.price, Elem2#request.created_date}
+			end, ordsets:to_list(State#state.requests_buy)),
 
     case find_low_price(Request#request.price, Sorted) of
 	none ->
-	    false;
+	    {false, State};
 	BuyRequest ->
-	    true
-    end;
+	    {false, State}
+    end.
 
-try_make_transaction(Request, InRequests) when Request#request.type == buy->
-    false.
+try_make_buy_transaction(Request, State) ->
+    {false, State}.
 
-find_low_price(Price, SortedRequests) ->
-    none.
+find_low_price(_Price, []) ->
+    none;
+
+find_low_price(Price, [Element|SortedRequests]) ->
+    case Element#request.price  =< Price of
+	true ->
+	    Element;
+	false ->
+	    find_low_price(Price, SortedRequests)
+    end.
 
 fetch_top10_requests(Dict, Order) ->
     PriceCountList = dict:to_list(Dict),

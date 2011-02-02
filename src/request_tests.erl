@@ -67,4 +67,7 @@ add_get_test() ->
     ?assert(Request8#request_price_count.price =:= 111),
     ?assert(Request8#request_price_count.count =:= 1),
 
+    %% Sell - buy test
+    ok = request_server:add_sell_request(Pid, "user111", 10),
+
     request_server:stop(Pid).
