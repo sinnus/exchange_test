@@ -70,4 +70,18 @@ add_get_test() ->
     %% Sell - buy test
     ok = request_server:add_sell_request(Pid, "user111", 10),
 
+    {Top10BuyRequests4, _} = request_server:get_top10_requests(Pid),
+    ?assert(10 =:= length(Top10BuyRequests4)),
+
+    Request9 = lists:nth(10, Top10BuyRequests4),
+    ?assert(Request9#request_price_count.price =:= 10),
+    ?assert(Request9#request_price_count.count =:= 3),
+
+    ok = request_server:add_sell_request(Pid, "user111", 1),
+    {Top10BuyRequests5, _} = request_server:get_top10_requests(Pid),
+    ?assert(10 =:= length(Top10BuyRequests5)),
+    Request10 = lists:nth(1, Top10BuyRequests5),
+    ?assert(Request10#request_price_count.price =:= 2),
+    ?assert(Request10#request_price_count.count =:= 1),
+
     request_server:stop(Pid).

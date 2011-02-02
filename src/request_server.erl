@@ -138,11 +138,21 @@ try_make_sell_transaction(Request, State) ->
 				    {Elem2#request.price, Elem2#request.created_date}
 			end, ordsets:to_list(State#state.requests_buy)),
 
-    case find_low_price(Request#request.price, Sorted) of
+    case find_high_price(Request#request.price, Sorted) of
 	none ->
 	    {false, State};
 	BuyRequest ->
-	    {false, State}
+	    Dict1 = dict:update_counter(Request#request.price, -1, State#state.price_buy2count),
+	    Dict2 = case dict:fetch(Request#request.price, Dict1) of
+			0 ->
+			    dict:erase(Request#request.price, Dict1);
+			_ ->
+			    Dict1
+		    end,
+	    
+	    State1 = State#state{requests_buy = ordsets:del_element(BuyRequest,  State#state.requests_buy),
+				 price_buy2count = Dict2},
+	    {true, State1}
     end.
 
 try_make_buy_transaction(Request, State) ->
@@ -157,6 +167,17 @@ find_low_price(Price, [Element|SortedRequests]) ->
 	    Element;
 	false ->
 	    find_low_price(Price, SortedRequests)
+    end.
+
+find_high_price(_Price, []) ->
+    none;
+
+find_high_price(Price, [Element|SortedRequests]) ->
+    case Element#request.price  >= Price of
+	true ->
+	    Element;
+	false ->
+	    find_high_price(Price, SortedRequests)
     end.
 
 fetch_top10_requests(Dict, Order) ->
