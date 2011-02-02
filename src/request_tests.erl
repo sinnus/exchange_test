@@ -84,4 +84,12 @@ add_get_test() ->
     ?assert(Request10#request_price_count.price =:= 2),
     ?assert(Request10#request_price_count.count =:= 1),
 
+    %% Buy - sell test
+    ok = request_server:add_buy_request(Pid, "user1", 1),
+    {Top10BuyRequests6, _} = request_server:get_top10_requests(Pid),
+    ?assert(10 =:= length(Top10BuyRequests6)),
+    Request11 = lists:nth(1, Top10BuyRequests6),
+    ?assertEqual(1, Request11#request_price_count.price),
+    ?assertEqual(1, Request11#request_price_count.count),
+
     request_server:stop(Pid).

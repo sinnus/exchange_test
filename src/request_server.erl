@@ -155,8 +155,29 @@ try_make_sell_transaction(Request, State) ->
 	    {true, State1}
     end.
 
+%% TODO: Remove code duplication
 try_make_buy_transaction(Request, State) ->
-    {false, State}.
+    Sorted = lists:sort(fun(Elem1, Elem2) ->
+				{Elem1#request.price, Elem1#request.created_date} >=
+				    {Elem2#request.price, Elem2#request.created_date}
+			end, ordsets:to_list(State#state.requests_sell)),
+
+    case find_low_price(Request#request.price, Sorted) of
+	none ->
+	    {false, State};
+	BuyRequest ->
+	    Dict1 = dict:update_counter(Request#request.price, -1, State#state.price_sell2count),
+	    Dict2 = case dict:fetch(Request#request.price, Dict1) of
+			0 ->
+			    dict:erase(Request#request.price, Dict1);
+			_ ->
+			    Dict1
+		    end,
+	    
+	    State1 = State#state{requests_sell = ordsets:del_element(BuyRequest,  State#state.requests_sell),
+				 price_sell2count = Dict2},
+	    {true, State1}
+    end.
 
 find_low_price(_Price, []) ->
     none;
