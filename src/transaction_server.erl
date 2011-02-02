@@ -6,6 +6,7 @@
 %% API
 -export([start_link/0,
 	 create_transaction/2,
+	 get_transactions/1,
 	 stop/0]).
 
 %% gen_server callbacks
@@ -22,13 +23,16 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 stop() ->
     gen_server:cast(?MODULE, stop).
 
 create_transaction(BuyRequest, SellRequest) ->
     gen_server:call(?MODULE, {create_transaction, BuyRequest, SellRequest}).
+
+get_transactions(User) ->
+    gen_server:call(?MODULE, {get_transactions, User}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -55,6 +59,10 @@ init([]) ->
 %%--------------------------------------------------------------------
 handle_call({create_transaction, BuyRequest, SellRequest}, _From, State) ->
     Reply = ok,
+    {reply, Reply, State};
+
+handle_call({get_transactions, User}, _From, State) ->
+    Reply = {ok, []},
     {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
