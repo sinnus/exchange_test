@@ -3,25 +3,32 @@
                 layout="vertical"
                 initialize="onInit()">
     <mx:Button id="button"
+               label="Conntect"
                click="onClick()"/>
     <mx:TextArea id="textArea"
                  width="100%"
                  height="100%"/>
     <mx:Script>
         <![CDATA[
+            import mx.controls.Alert;
             private var socket:XMLSocket;
 
             private function onInit():void
             {
                 socket=new XMLSocket();
-                socket.timeout = 1;
                 socket.connect("localhost", 9234);
                 socket.addEventListener(DataEvent.DATA, handleData);
+                socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, handleSecurityError);
+            }
+
+            private function handleSecurityError(event:SecurityErrorEvent):void
+            {
+                Alert.show(event.toString());
             }
 
             private function onClick():void
             {
-                socket.send("ZZZ");
+                socket.send('{"login": "user1", "password": "pwd"}');
             }
 
             private function handleData(event:DataEvent):void
