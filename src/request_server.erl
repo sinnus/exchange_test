@@ -152,6 +152,9 @@ try_make_sell_transaction(Request, State) ->
 
 	    State1 = State#state{requests_buy = ordsets:del_element(BuyRequest,  State#state.requests_buy),
 				 price_buy2count = Dict2},
+
+	    ok = transaction_server:create_transaction(BuyRequest, Request, State#state.tool_name, sell),
+
 	    {true, State1}
     end.
 
@@ -165,7 +168,7 @@ try_make_buy_transaction(Request, State) ->
     case find_low_price(Request#request.price, Sorted) of
 	none ->
 	    {false, State};
-	BuyRequest ->
+	SellRequest ->
 	    Dict1 = dict:update_counter(Request#request.price, -1, State#state.price_sell2count),
 	    Dict2 = case dict:fetch(Request#request.price, Dict1) of
 			0 ->
@@ -174,8 +177,11 @@ try_make_buy_transaction(Request, State) ->
 			    Dict1
 		    end,
 	    
-	    State1 = State#state{requests_sell = ordsets:del_element(BuyRequest,  State#state.requests_sell),
+	    State1 = State#state{requests_sell = ordsets:del_element(SellRequest,  State#state.requests_sell),
 				 price_sell2count = Dict2},
+
+	    ok = transaction_server:create_transaction(Request, SellRequest, State#state.tool_name, buy),
+
 	    {true, State1}
     end.
 
