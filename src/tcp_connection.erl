@@ -113,8 +113,13 @@ ready(Data, State) when is_binary(Data) ->
 	end,
     {next_state, ready, State};
 
-ready({send_message, Message}, State) ->
-    gen_tcp:send(State#state.socket, Message),
+ready({send_message, Message}, State) when is_list(Message) ->
+    MessageBin = list_to_binary(Message),
+    gen_tcp:send(State#state.socket, <<MessageBin/binary, 0>>),
+    {next_state, ready, State};
+
+ready({send_message, Message}, State) when is_binary(Message) ->
+    gen_tcp:send(State#state.socket, <<Message/binary, 0>>),
     {next_state, ready, State};
 
 ready(Data, State) ->
