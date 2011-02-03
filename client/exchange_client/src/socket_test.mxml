@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+                layout="vertical"
+                initialize="onInit()">
+    <mx:Button id="button"
+               click="onClick()"/>
+    <mx:TextArea id="textArea"
+                 width="100%"
+                 height="100%"/>
+    <mx:Script>
+        <![CDATA[
+            private var socket:XMLSocket;
+
+            private function onInit():void
+            {
+                socket=new XMLSocket();
+                socket.timeout = 1;
+                socket.connect("localhost", 9234);
+                socket.addEventListener(DataEvent.DATA, handleData);
+            }
+
+            private function onClick():void
+            {
+                socket.send("ZZZ");
+            }
+
+            private function handleData(event:DataEvent):void
+            {
+                textArea.text=textArea.text + event.data + "\n";
+            }
+        ]]>
+    </mx:Script>
+</mx:Application>
