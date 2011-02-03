@@ -2,10 +2,10 @@
 -module(transaction_server).
 
 -behaviour(gen_server).
-
+-include("common.hrl").
 %% API
 -export([start_link/0,
-	 create_transaction/2,
+	 create_transaction/4,
 	 get_transactions/1,
 	 stop/0]).
 
@@ -28,8 +28,8 @@ start_link() ->
 stop() ->
     gen_server:cast(?MODULE, stop).
 
-create_transaction(BuyRequest, SellRequest) ->
-    gen_server:call(?MODULE, {create_transaction, BuyRequest, SellRequest}).
+create_transaction(BuyRequest, SellRequest, ToolName, ExistedRequestType) ->
+    gen_server:call(?MODULE, {create_transaction, BuyRequest, SellRequest, ToolName, ExistedRequestType}).
 
 get_transactions(User) ->
     gen_server:call(?MODULE, {get_transactions, User}).
@@ -57,12 +57,32 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({create_transaction, BuyRequest, SellRequest}, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State};
+handle_call({create_transaction, BuyRequest, SellRequest, ToolName, ExistedRequestType}, _From, State) ->
+    TransactionPrice = case ExistedRequestType of
+			   buy ->
+			       BuyRequest#request.price;
+			   sell ->
+			       SellRequest#request.price
+		       end,
+
+    Transaction = #transaction{created_date = erlang:now(),
+			       tool_name = ToolName,
+			       price = TransactionPrice,
+			       buy_user = BuyRequest#request.user_name,
+			       buy_price = BuyRequest#request.price,
+			       sell_user = SellRequest#request.user_name,
+			       sell_price = SellRequest#request.price},
+
+    State1 = State#state{transactions = [Transaction|State#state.transactions]},
+    {reply, ok, State1};
 
 handle_call({get_transactions, User}, _From, State) ->
-    Reply = {ok, []},
+    UserTransactions = lists:filter(fun(Elem) ->
+					    Elem#transaction.buy_user == User orelse
+						Elem#transaction.sell_user == User 
+				    end, State#state.transactions),
+
+    Reply = {ok, UserTransactions},
     {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
