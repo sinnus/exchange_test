@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" layout="vertical" minWidth="955" minHeight="600">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<mx:Button label="Login" click="onLogin()"/>
+	<mx:Button label="Send test data" click="onSend()"/>
+	<mx:TextArea id="textArea" width="250" height="100"/>
+	
+	<fx:Script>
+		<![CDATA[
+			private var socket:XMLSocket;
+			
+			private function onLogin():void
+			{
+				socket=new XMLSocket();
+				socket.connect("localhost", 9234);
+				socket.addEventListener(DataEvent.DATA, handleData);
+				socket.send('{"login": "user1", "password": "pwd"}');
+			}
+			
+			private function onSend():void {
+				socket.send('{"type": "GetRequests", "data": null}');
+			}
+			
+			private function handleData(event:DataEvent):void
+			{
+				textArea.text=textArea.text + event.data + "\n";
+			}
+		]]>
+	</fx:Script>
+</mx:Application>
