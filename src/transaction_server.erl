@@ -26,7 +26,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 stop() ->
-    gen_server:cast(?MODULE, stop).
+    gen_server:call(?MODULE, stop).
 
 create_transaction(BuyRequest, SellRequest, ToolName, ExistedRequestType) ->
     gen_server:call(?MODULE, {create_transaction, BuyRequest, SellRequest, ToolName, ExistedRequestType}).
@@ -84,6 +84,9 @@ handle_call({get_transactions, User}, _From, State) ->
 
     Reply = {ok, UserTransactions},
     {reply, Reply, State};
+
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
