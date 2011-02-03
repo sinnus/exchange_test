@@ -96,7 +96,7 @@ handle_call({add_principal_connection, Principal, TcpConnectionPid}, _From, Stat
 				   error ->
 				       dict:store(Principal, [TcpConnectionPid], State#state.principal2connections)
 			       end,
-    error_logger:info_msg("add principal ~p, new list: ~p~n", [Principal, dict:find(Principal, NewPrincipal2Connections)]),
+    error_logger:info_msg("add principal ~p~n", [Principal]),
     NewState = State#state{principal2connections = NewPrincipal2Connections},
     {reply, ok, NewState};
 
@@ -114,7 +114,7 @@ handle_call({remove_principal_connection, Principal, TcpConnectionPid}, _From, S
 				       State#state.principal2connections
 			       end,
 
-    error_logger:info_msg("remove principal ~p, new list: ~p~n", [Principal, dict:find(Principal, NewPrincipal2Connections)]),
+    error_logger:info_msg("remove principal ~p~n", [Principal]),
     NewState = State#state{principal2connections = NewPrincipal2Connections},
     {reply, ok, NewState};
 
