@@ -12,6 +12,7 @@
 
 %% API
 -export([start_link/1,
+	 start_link/2,
 	 stop/1,
 	 add_buy_request/3,
 	 add_sell_request/3,
@@ -36,6 +37,9 @@
 %%--------------------------------------------------------------------
 start_link(ToolName) ->
     gen_server:start_link(?MODULE, [ToolName], []).
+
+start_link(LocalName, ToolName) ->
+    gen_server:start_link({local, LocalName}, ?MODULE, [ToolName], []).
 
 stop(Pid) ->
     gen_server:cast(Pid, stop).
@@ -87,6 +91,8 @@ handle_call({add_buy_request, UserName, Price}, _From, State) ->
 		       user_name = UserName,
 		       type = buy,
 		       price = Price},
+
+    tcp_connection_manager:send_message(<<"user1">>, <<"add_buy_request_done">>),
 
     case try_make_buy_transaction(Request, State) of
 	{true, State1} ->

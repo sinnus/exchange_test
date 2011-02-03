@@ -56,9 +56,27 @@ init([]) ->
 	 worker,
 	 ['tcp_listener']},
 
+    TransactionServer =
+	{transaction_server,
+	 {transaction_server, start_link,[]},
+	 permanent,
+	 brutal_kill,
+	 worker,
+	 ['transaction_server']},
+
+    RequestTool1Server =
+    	{request_tool1_server,
+    	 {request_server, start_link,[request_tool1_server, "tool1"]},
+    	 permanent,
+    	 brutal_kill,
+    	 worker,
+    	 ['request_tool1_server']},
+    
     {ok,{{one_for_one,0,1},
 	 [Listener,
-	  TcpConnectionManager]}}.
+	  TcpConnectionManager,
+	  TransactionServer,
+	  RequestTool1Server]}}.
 
 %%====================================================================
 %% Internal functions

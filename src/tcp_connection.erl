@@ -84,6 +84,8 @@ wait_for_principal(Data, State) when is_binary(Data) ->
 		    error_logger:info_msg("Wrong login:~p~n", [Login]),
 		    {stop, normal, State}
 	    end;
+	{error, _Reason} ->
+	    {stop, normal, State};
 	undefined ->
 	    {stop, normal, State}
     end;
@@ -93,6 +95,23 @@ wait_for_principal(_Data, State) ->
 
 ready(<<"quit\r\n">>, State) ->
     {stop, normal, State};
+
+ready(Data, State) when is_binary(Data) ->
+    JsonData =  rfc4627:decode(Data),
+
+    R = case JsonData of
+	    {ok, Json, _R} ->
+		EventVO = ?RFC4627_TO_RECORD(event_vo, Json),
+		apply(tcp_connection_callback, handle_request,
+		      [State#state.principal,
+		       EventVO#event_vo.type,
+		       EventVO#event_vo.data]),
+		ok;
+	    {error, Reason} ->
+		%% TODO: Send error message to client
+		ok
+	end,
+    {next_state, ready, State};
 
 ready({send_message, Message}, State) ->
     gen_tcp:send(State#state.socket, Message),
