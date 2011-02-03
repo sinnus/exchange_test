@@ -11,3 +11,5 @@
 		      sell_price}).
 
 -record(request_price_count, {price, count}).
+
+-record(login_vo, {login, password}).

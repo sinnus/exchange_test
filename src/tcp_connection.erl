@@ -8,6 +8,8 @@
 -module(tcp_connection).
 
 -behaviour(gen_fsm).
+-include("rfc4627.hrl").
+-include("common.hrl").
 
 %% API
 -export([start_link/1, start/1,
@@ -62,16 +64,17 @@ init([Socket]) ->
 wait_for_principal(Data, State) when is_binary(Data) ->
     gen_fsm:cancel_timer(State#state.tref),
     LoginJsonData =  try
-			 mochijson2:decode(Data)
+			 rfc4627:decode(Data)
 		     catch
 			 error:Reason ->
 			     error_logger:info_msg("Couldn't parse json data. Reason: ~p~n", [Reason]),
 			     undefined
 		     end,
     case LoginJsonData of
-	{struct, JsonData} ->
-	    Login =  proplists:get_value(<<"login">>, JsonData),
-	    Password =  proplists:get_value(<<"password">>, JsonData),
+	{ok, JsonData, _R} ->
+	    LoginVO = ?RFC4627_TO_RECORD(login_vo, JsonData),
+	    Login =  LoginVO#login_vo.login,
+	    Password = LoginVO#login_vo.password,
 	    case auth_module:check_principal(Login, Password) of
 		true ->
 		    NewState = State#state{principal = Login},
