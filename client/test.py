@@ -10,5 +10,9 @@ s.send('{"type": "RequestBuy", "data": {"price": "10", "tool": "tool1"}}\0')
 data = s.recv(1024)
 print 'Received', repr(data)
 
+s.send('{"type": "GetRequests", "data": null}\0')
+data = s.recv(1024)
+print 'Received', repr(data)
+
 raw_input("Press Enter to continue...")
 s.close()
