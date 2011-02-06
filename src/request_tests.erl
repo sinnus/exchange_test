@@ -113,3 +113,17 @@ sell_buy_test() ->
     transaction_server:stop(),
     request_server:stop(Pid).
 
+buy_sell_test() ->
+    {ok, _} = transaction_server:start_link(),
+    {ok, Pid} = request_server:start_link("tool1"),
+    {ok, TCPid} = tcp_connection_manager:start_link(),
+
+    ok = request_server:add_buy_request(Pid, "user1", 500),
+    ok = request_server:add_sell_request(Pid, "user1", 100),
+
+    Result1 = request_server:get_top10_requests(Pid),
+    ?assertEqual({[], []}, Result1),
+
+    tcp_connection_manager:stop(TCPid),
+    transaction_server:stop(),
+    request_server:stop(Pid).

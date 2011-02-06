@@ -146,10 +146,10 @@ try_make_sell_transaction(Request, State) ->
 	none ->
 	    {false, State};
 	BuyRequest ->
-	    Dict1 = dict:update_counter(Request#request.price, -1, State#state.price_buy2count),
-	    Dict2 = case dict:fetch(Request#request.price, Dict1) of
+	    Dict1 = dict:update_counter(BuyRequest#request.price, -1, State#state.price_buy2count),
+	    Dict2 = case dict:fetch(BuyRequest#request.price, Dict1) of
 			0 ->
-			    dict:erase(Request#request.price, Dict1);
+			    dict:erase(BuyRequest#request.price, Dict1);
 			_ ->
 			    Dict1
 		    end,
