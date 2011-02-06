@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				title="Add Request"
+				horizontalAlign="center"  verticalAlign="middle"
+		   xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<mx:HBox>
+		<mx:Label text="Price" />
+		<mx:TextInput id="priceTextInput" text="1"/>
+		<mx:ComboBox id="comboBox">
+			<mx:ArrayCollection>
+				<fx:String>Buy</fx:String>
+				<fx:String>Sell</fx:String>
+			</mx:ArrayCollection>
+		</mx:ComboBox>
+	</mx:HBox>
+	<mx:HBox>
+		<mx:Button label="OK" click="onOk()"/>
+		<mx:Button label="Cancel" click="onCancel()"/>
+	</mx:HBox>
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			private function onOk():void
+			{
+				var type:String;
+				if (comboBox.selectedIndex == 0)
+				{
+					type = RequestFormEvent.REQUEST_BUY;
+				}
+				else
+				{
+					type = RequestFormEvent.REQUEST_SELL;
+				}
+				
+				var event:RequestFormEvent = new RequestFormEvent(type, new Number(priceTextInput.text));
+				dispatchEvent(event);
+				
+				PopUpManager.removePopUp(this);	
+			}
+			
+			private function onCancel():void
+			{
+				PopUpManager.removePopUp(this);	
+			}
+		]]>
+	</fx:Script>
+</mx:TitleWindow>

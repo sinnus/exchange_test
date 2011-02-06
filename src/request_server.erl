@@ -92,8 +92,6 @@ handle_call({add_buy_request, UserName, Price}, _From, State) ->
 		       type = buy,
 		       price = Price},
 
-    tcp_connection_manager:send_message(<<"user1">>, <<"add_buy_request_done">>),
-
     case try_make_buy_transaction(Request, State) of
 	{true, State1} ->
 	    {reply, ok, State1};

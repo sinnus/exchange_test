@@ -79,6 +79,9 @@ wait_for_principal(Data, State) when is_binary(Data) ->
 		true ->
 		    NewState = State#state{principal = Login},
 		    tcp_connection_manager:add_principal_connection(Login, self()),
+
+		    tcp_connection_manager:send_message(Login, <<"{\"type\": \"Logon\", \"data\": null}">>),
+
 		    {next_state, ready, NewState};
 		false ->
 		    error_logger:info_msg("Wrong login:~p~n", [Login]),

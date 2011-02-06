@@ -9,9 +9,17 @@
 handle_request(Principal, <<"RequestBuy">>, Data) ->
     RequestDataVO = ?RFC4627_TO_RECORD(request_data_vo, Data),
 
-    request_server:add_buy_request(request_tool1_server, "user1", 10),
+    request_server:add_buy_request(request_tool1_server, Principal, RequestDataVO#request_data_vo.price),
 
     error_logger:info_msg("RequestBuy:~p~n", [RequestDataVO]),
+    ok;
+
+handle_request(Principal, <<"RequestSell">>, Data) ->
+    RequestDataVO = ?RFC4627_TO_RECORD(request_data_vo, Data),
+
+    request_server:add_sell_request(request_tool1_server, Principal, RequestDataVO#request_data_vo.price),
+
+    error_logger:info_msg("RequestSell:~p~n", [RequestDataVO]),
     ok;
 
 handle_request(Principal, <<"GetRequests">>, _) ->
@@ -22,16 +30,23 @@ handle_request(Principal, <<"GetRequests">>, _) ->
     Top10RequestsVO = #top_10_requests_vo{buy_requests = Top10BuyVOs,
 					  sell_requests = Top10SellVOs},
 
-    Top10RequestsJson = rfc4627:encode(?RFC4627_FROM_RECORD(top_10_requests_vo, Top10RequestsVO)),
-
-    error_logger:info_msg("Value: ~p~n", [Top10RequestsJson]),
-
-    %% TODO: EventVO must be sent
-
-    tcp_connection_manager:send_message(Principal, Top10RequestsJson);
+    Top10RequestsJson = ?RFC4627_FROM_RECORD(top_10_requests_vo, Top10RequestsVO),
+    
+    send_event_vo(Principal, <<"Top10BuySellRequests">>, Top10RequestsJson),
+    ok;
 
 handle_request(_Principal, _Type, _Data) ->
     ok.
+
+send_event_vo(Principal, EventType, JsonData) ->
+    EventVO = #event_vo{type = EventType,
+			data = JsonData},
+
+    Data = rfc4627:encode(?RFC4627_FROM_RECORD(event_vo, EventVO)),
+
+    error_logger:info_msg("EventVO: ~p~n", [Data]),
+
+    tcp_connection_manager:send_message(Principal, Data).
 
 %% Internal funcs
 convert_request_to_vos(Top10Requests) ->

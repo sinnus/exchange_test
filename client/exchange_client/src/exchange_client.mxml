@@ -1,32 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
-				xmlns:mx="library://ns.adobe.com/flex/mx" layout="vertical" minWidth="955" minHeight="600">
+				xmlns:mx="library://ns.adobe.com/flex/mx" layout="vertical" width="100%" height="100%">
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
-	<mx:Button label="Login" click="onLogin()"/>
-	<mx:Button label="Send test data" click="onSend()"/>
-	<mx:TextArea id="textArea" width="250" height="100"/>
+	<mx:ViewStack id="viewStack" width="100%" height="100%">
+		<mx:VBox verticalAlign="middle" horizontalAlign="center">
+			<mx:HBox>
+				<mx:Label text="Username: "/>
+				<mx:TextInput id="usernameTextArea" />
+			</mx:HBox>
+			<mx:Button label="Login" click="onLogin()"/>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Button label="Add Request" click="onAddRequest()"/>
+			<mx:Button label="Get Top10Request" click="getRequests()"/>
+			<mx:Label text="Top 10 buy requests"/>
+			<mx:DataGrid dataProvider="{_top10BuyRequests}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Price" dataField="price"/>
+					<mx:DataGridColumn headerText="Count" dataField="count"/>
+				</mx:columns>
+			</mx:DataGrid>
+
+			<mx:Label text="Top 10 sell requests"/>
+			<mx:DataGrid dataProvider="{_top10SellRequests}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Price" dataField="price"/>
+					<mx:DataGridColumn headerText="Count" dataField="count"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+	</mx:ViewStack>
 	
 	<fx:Script>
 		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			import com.adobe.serialization.json.JSONDecoder;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
 			private var socket:XMLSocket;
+			
+			[Bindable]
+			private var _top10BuyRequests:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var _top10SellRequests:ArrayCollection = new ArrayCollection();
 			
 			private function onLogin():void
 			{
-				socket=new XMLSocket();
-				socket.connect("localhost", 9234);
+				var username:String = usernameTextArea.text;
+				if (username == "") {
+					Alert.show("Введите имя пользователя");
+					return;
+				}
+				
+				socket=new XMLSocket();				
 				socket.addEventListener(DataEvent.DATA, handleData);
-				socket.send('{"login": "user1", "password": "pwd"}');
+				socket.connect("localhost", 9234);
+				socket.send('{"login": "' + username + '", "password": "password"}');
+				viewStack.selectedIndex = 1;
 			}
 			
-			private function onSend():void {
+			private function onAddRequest():void {
+				var requestForm:RequestForm = new RequestForm();
+				requestForm.addEventListener(RequestFormEvent.REQUEST_BUY, handleRequestBuy);
+				requestForm.addEventListener(RequestFormEvent.REQUEST_SELL, handleRequestSell);
+				PopUpManager.addPopUp(requestForm, this, true);
+				PopUpManager.centerPopUp(requestForm);
+
+			}
+			
+			private function handleRequestBuy(event:RequestFormEvent):void
+			{
+				socket.send('{"type": "RequestBuy", "data": {"price": ' + event.price + ', "tool": "tool1"}}');		
+			}
+	
+			private function handleRequestSell(event:RequestFormEvent):void
+			{
+				socket.send('{"type": "RequestSell", "data": {"price": ' + event.price + ', "tool": "tool1"}}');	
+			}
+			
+			private function getRequests():void {
 				socket.send('{"type": "GetRequests", "data": null}');
 			}
 			
 			private function handleData(event:DataEvent):void
 			{
-				textArea.text=textArea.text + event.data + "\n";
+				var eventObject:Object = JSON.decode(event.data);
+				if (eventObject.type == "Top10BuySellRequests")
+				{
+					var elem:Object;
+					_top10BuyRequests.removeAll();
+					for each(elem in eventObject.data.buy_requests)
+					{
+						_top10BuyRequests.addItem(elem);
+					}
+
+					_top10SellRequests.removeAll();
+					for each(elem in eventObject.data.sell_requests)
+					{
+						_top10SellRequests.addItem(elem);
+					}
+				} else if (eventObject.type == "Logon")
+				{
+					getRequests();				
+				}
 			}
 		]]>
 	</fx:Script>
