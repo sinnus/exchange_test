@@ -173,10 +173,10 @@ try_make_buy_transaction(Request, State) ->
 	none ->
 	    {false, State};
 	SellRequest ->
-	    Dict1 = dict:update_counter(Request#request.price, -1, State#state.price_sell2count),
-	    Dict2 = case dict:fetch(Request#request.price, Dict1) of
+	    Dict1 = dict:update_counter(SellRequest#request.price, -1, State#state.price_sell2count),
+	    Dict2 = case dict:fetch(SellRequest#request.price, Dict1) of
 			0 ->
-			    dict:erase(Request#request.price, Dict1);
+			    dict:erase(SellRequest#request.price, Dict1);
 			_ ->
 			    Dict1
 		    end,
