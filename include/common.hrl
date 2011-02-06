@@ -17,3 +17,4 @@
 -record(event_vo, {type, data}).
 -record(request_data_vo, {price, tool}).
 -record(top_10_requests_vo, {buy_requests, sell_requests}).
+-record(transaction_vo, {tool_name, price}).

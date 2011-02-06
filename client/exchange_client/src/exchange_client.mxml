@@ -37,7 +37,6 @@
 					<mx:Label text="Completed transactions"/>
 					<mx:DataGrid dataProvider="{_transactions}">
 						<mx:columns>
-							<mx:DataGridColumn headerText="Date" dataField="created_date"/>
 							<mx:DataGridColumn headerText="Tool name" dataField="tool_name"/>
 							<mx:DataGridColumn headerText="Price" dataField="price"/>
 						</mx:columns>
@@ -100,6 +99,7 @@
 			
 			private function getRequests():void {
 				socket.send('{"type": "GetRequests", "data": null}');
+				socket.send('{"type": "GetTransactions", "data": null}');
 			}
 			
 			private function handleData(event:DataEvent):void
@@ -125,12 +125,22 @@
 				} else if (eventObject.type == "BuyRequestDone")
 				{
 					Alert.show("BuyRequestDone. Price: " + eventObject.data);
+					getRequests();
 				} else if (eventObject.type == "SellRequestDone")
 				{
 					Alert.show("SellRequestDone. Price: " + eventObject.data);
+					getRequests();
 				} else if (eventObject.type == "RequestAdded")
 				{
 					getRequests();
+				} else if (eventObject.type == "Transactions")
+				{
+					var elem1:Object;
+					_transactions.removeAll();
+					for each(elem1 in eventObject.data)
+					{
+						_transactions.addItem(elem1);
+					}
 				}
 			}
 		]]>

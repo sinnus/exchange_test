@@ -100,20 +100,7 @@ ready(<<"quit\r\n">>, State) ->
     {stop, normal, State};
 
 ready(Data, State) when is_binary(Data) ->
-    JsonData =  rfc4627:decode(Data),
-
-    R = case JsonData of
-	    {ok, Json, _R} ->
-		EventVO = ?RFC4627_TO_RECORD(event_vo, Json),
-		apply(tcp_connection_callback, handle_request,
-		      [State#state.principal,
-		       EventVO#event_vo.type,
-		       EventVO#event_vo.data]),
-		ok;
-	    {error, Reason} ->
-		%% TODO: Send error message to client
-		ok
-	end,
+    process_json_data(Data, State#state.principal),
     {next_state, ready, State};
 
 ready({send_message, Message}, State) when is_list(Message) ->
@@ -175,3 +162,26 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%--------------------------------------------------------------------
 activate(Socket) ->
     inet:setopts(Socket, [{active, once}]).
+
+process_json_data(Data, Principal) when is_binary(Data) ->
+    SplitData = binary:split(Data, <<0>>, [global, trim]),
+    do_process_json_data(SplitData, Principal).
+
+do_process_json_data([], Principal) ->
+    ok;
+
+do_process_json_data([Data|Tail], Principal) ->
+    JsonData =  rfc4627:decode(Data),
+    case JsonData of
+	    {ok, Json, _R} ->
+		EventVO = ?RFC4627_TO_RECORD(event_vo, Json),
+		apply(tcp_connection_callback, handle_request,
+		      [Principal,
+		       EventVO#event_vo.type,
+		       EventVO#event_vo.data]),
+		ok;
+	    {error, Reason} ->
+		%% TODO: Send error message to client
+		ok
+    end,
+    do_process_json_data(Tail, Principal).

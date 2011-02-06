@@ -37,6 +37,12 @@ handle_request(Principal, <<"GetRequests">>, _) ->
     client_dispatcher:send_event_vo(Principal, <<"Top10BuySellRequests">>, Top10RequestsJson),
     ok;
 
+handle_request(Principal, <<"GetTransactions">>, _) ->
+    {ok, Transactions} = transaction_server:get_transactions(Principal),
+    TransactionVOs = convert_transactions_to_vos(Transactions),
+    client_dispatcher:send_event_vo(Principal, <<"Transactions">>, TransactionVOs),
+    ok;
+
 handle_request(_Principal, _Type, _Data) ->
     ok.
 
@@ -48,3 +54,11 @@ convert_request_to_vos(Top10Requests) ->
 		       count = Elem#request_price_count.count},
 		      ?RFC4627_FROM_RECORD(request_price_count_vo, ElemVO)
 	     end, Top10Requests).
+
+convert_transactions_to_vos(Transactions) ->
+    lists:map(fun(Elem) ->
+		      ElemVO = #transaction_vo{
+		       tool_name = list_to_binary(Elem#transaction.tool_name),
+		       price = Elem#transaction.price},
+		      ?RFC4627_FROM_RECORD(transaction_vo, ElemVO)
+	      end, Transactions).
