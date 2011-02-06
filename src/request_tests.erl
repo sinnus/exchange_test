@@ -6,7 +6,7 @@
 add_get_test() ->
     {ok, TPid} = transaction_server:start_link(),
     {ok, Pid} = request_server:start_link("tool1"),
-    {ok, _} = tcp_connection_manager:start_link(),
+    {ok, TCPid} = tcp_connection_manager:start_link(),
 
     %% Buy test
     ok = request_server:add_buy_request(Pid, "user1", 10),
@@ -94,6 +94,6 @@ add_get_test() ->
     ?assertEqual(1, Request11#request_price_count.price),
     ?assertEqual(1, Request11#request_price_count.count),
 
-    %% TODO: Add stop tcp_connection_manager
+    tcp_connection_manager:stop(TCPid),
     transaction_server:stop(),
     request_server:stop(Pid).

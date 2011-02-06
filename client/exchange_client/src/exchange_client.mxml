@@ -106,13 +106,16 @@
 				} else if (eventObject.type == "Logon")
 				{
 					getRequests();				
-				}  else if (eventObject.type == "BuyRequestDone")
+				} else if (eventObject.type == "BuyRequestDone")
 				{
 					Alert.show("BuyRequestDone. Price: " + eventObject.data);
-				}  else if (eventObject.type == "SellRequestDone")
+				} else if (eventObject.type == "SellRequestDone")
 				{
 					Alert.show("SellRequestDone. Price: " + eventObject.data);
-				}			
+				} else if (eventObject.type == "RequestAdded")
+				{
+					getRequests();
+				}
 			}
 		]]>
 	</fx:Script>

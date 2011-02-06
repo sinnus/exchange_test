@@ -5,6 +5,7 @@
 
 transaction_create_test() ->
     {ok, _} = transaction_server:start_link(),
+    {ok, TCPid} = tcp_connection_manager:start_link(),
 
     BuyRequest1 = #request{id = 1,
 			  created_date = erlang:now(),
@@ -26,4 +27,5 @@ transaction_create_test() ->
     {ok, UserTrans2} = transaction_server:get_transactions("user2"),
     ?assertEqual(1, length(UserTrans2)),
 
+    tcp_connection_manager:stop(TCPid),
     transaction_server:stop().

@@ -12,7 +12,7 @@
 %% API
 -export([start_link/0, add_connection/1, remove_connection/1,
 	 add_principal_connection/2, remove_principal_connection/2,
-	 send_message/2]).
+	 send_message/2, stop/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -30,6 +30,9 @@
 %%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+stop(Pid) ->
+    gen_server:call(Pid, stop).
 
 add_connection(TcpConnectionPid) ->
     gen_server:call(?MODULE, {add_connection, TcpConnectionPid}),
@@ -126,6 +129,9 @@ handle_call({get_connections, Principal}, _From, State) ->
 			  []
 		  end,
     {reply, ResultConnections, State};
+
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

@@ -10,6 +10,7 @@ handle_request(Principal, <<"RequestBuy">>, Data) ->
     RequestDataVO = ?RFC4627_TO_RECORD(request_data_vo, Data),
 
     request_server:add_buy_request(request_tool1_server, Principal, RequestDataVO#request_data_vo.price),
+    client_dispatcher:send_request_added(Principal),
 
     error_logger:info_msg("RequestBuy:~p~n", [RequestDataVO]),
     ok;
@@ -18,6 +19,7 @@ handle_request(Principal, <<"RequestSell">>, Data) ->
     RequestDataVO = ?RFC4627_TO_RECORD(request_data_vo, Data),
 
     request_server:add_sell_request(request_tool1_server, Principal, RequestDataVO#request_data_vo.price),
+    client_dispatcher:send_request_added(Principal),
 
     error_logger:info_msg("RequestSell:~p~n", [RequestDataVO]),
     ok;
