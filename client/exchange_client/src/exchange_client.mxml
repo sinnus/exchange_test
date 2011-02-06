@@ -15,21 +15,35 @@
 		<mx:VBox>
 			<mx:Button label="Add Request" click="onAddRequest()"/>
 			<mx:Button label="Get Top10Request" click="getRequests()"/>
-			<mx:Label text="Top 10 buy requests"/>
-			<mx:DataGrid dataProvider="{_top10BuyRequests}">
-				<mx:columns>
-					<mx:DataGridColumn headerText="Price" dataField="price"/>
-					<mx:DataGridColumn headerText="Count" dataField="count"/>
-				</mx:columns>
-			</mx:DataGrid>
-
-			<mx:Label text="Top 10 sell requests"/>
-			<mx:DataGrid dataProvider="{_top10SellRequests}">
-				<mx:columns>
-					<mx:DataGridColumn headerText="Price" dataField="price"/>
-					<mx:DataGridColumn headerText="Count" dataField="count"/>
-				</mx:columns>
-			</mx:DataGrid>
+			<mx:HBox>
+				<mx:VBox>
+					<mx:Label text="Top 10 buy requests"/>
+					<mx:DataGrid dataProvider="{_top10BuyRequests}">
+						<mx:columns>
+							<mx:DataGridColumn headerText="Price" dataField="price"/>
+							<mx:DataGridColumn headerText="Count" dataField="count"/>
+						</mx:columns>
+					</mx:DataGrid>
+					
+					<mx:Label text="Top 10 sell requests"/>
+					<mx:DataGrid dataProvider="{_top10SellRequests}">
+						<mx:columns>
+							<mx:DataGridColumn headerText="Price" dataField="price"/>
+							<mx:DataGridColumn headerText="Count" dataField="count"/>
+						</mx:columns>
+					</mx:DataGrid>					
+				</mx:VBox>
+				<mx:VBox>
+					<mx:Label text="Completed transactions"/>
+					<mx:DataGrid dataProvider="{_transactions}">
+						<mx:columns>
+							<mx:DataGridColumn headerText="Date" dataField="created_date"/>
+							<mx:DataGridColumn headerText="Tool name" dataField="tool_name"/>
+							<mx:DataGridColumn headerText="Price" dataField="price"/>
+						</mx:columns>
+					</mx:DataGrid>						
+				</mx:VBox>
+			</mx:HBox>
 		</mx:VBox>
 	</mx:ViewStack>
 	
@@ -47,6 +61,8 @@
 			private var _top10BuyRequests:ArrayCollection = new ArrayCollection();
 			[Bindable]
 			private var _top10SellRequests:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var _transactions:ArrayCollection = new ArrayCollection();
 			
 			private function onLogin():void
 			{
