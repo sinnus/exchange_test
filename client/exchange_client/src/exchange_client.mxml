@@ -108,10 +108,10 @@
 					getRequests();				
 				}  else if (eventObject.type == "BuyRequestDone")
 				{
-					Alert.show("BuyRequestDone. Price: " + eventObject.data.price);
+					Alert.show("BuyRequestDone. Price: " + eventObject.data);
 				}  else if (eventObject.type == "SellRequestDone")
 				{
-					Alert.show("SellRequestDone. Price: " + eventObject.data.price);
+					Alert.show("SellRequestDone. Price: " + eventObject.data);
 				}			
 			}
 		]]>
