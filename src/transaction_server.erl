@@ -73,6 +73,8 @@ handle_call({create_transaction, BuyRequest, SellRequest, ToolName, ExistedReque
 			       sell_user = SellRequest#request.user_name,
 			       sell_price = SellRequest#request.price},
 
+    client_dispatcher:send_transaction(Transaction),
+
     State1 = State#state{transactions = [Transaction|State#state.transactions]},
     {reply, ok, State1};
 
