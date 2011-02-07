@@ -80,7 +80,7 @@ wait_for_principal(Data, State) when is_binary(Data) ->
 		    NewState = State#state{principal = Login},
 		    tcp_connection_manager:add_principal_connection(Login, self()),
 
-		    tcp_connection_manager:send_message(Login, <<"{\"type\": \"Logon\", \"data\": null}">>),
+                    gen_tcp:send(State#state.socket, <<"{\"type\": \"Logon\", \"data\": null}",0>>),
 
 		    {next_state, ready, NewState};
 		false ->

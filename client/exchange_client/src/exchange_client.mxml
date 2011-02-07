@@ -74,7 +74,10 @@
 				socket=new XMLSocket();				
 				socket.addEventListener(DataEvent.DATA, handleData);
 				socket.connect("localhost", 9234);
-				socket.send('{"login": "' + username + '", "password": "password"}');
+				var loginObject:Object = new Object();
+				loginObject.login = username;
+				loginObject.password = "password";
+				socket.send(JSON.encode(loginObject));
 				viewStack.selectedIndex = 1;
 			}
 			
