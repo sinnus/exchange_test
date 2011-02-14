@@ -26,7 +26,7 @@
 
 -define(HANDSHAKE_TIMEOUT, 30000).
 
--record(state, {socket, principal, tref}).
+-record(state, {socket, principal, tref, buffer}).
 %%====================================================================
 %% API
 %%====================================================================
@@ -59,7 +59,8 @@ init([Socket]) ->
     TRef = gen_fsm:send_event_after(?HANDSHAKE_TIMEOUT, stop),
     {ok, wait_for_principal, #state{socket = Socket,
 				    principal = none,
-				    tref = TRef}}.
+				    tref = TRef,
+				    buffer = <<>>}}.
 
 wait_for_principal(Data, State) when is_binary(Data) ->
     gen_fsm:cancel_timer(State#state.tref),
@@ -100,8 +101,11 @@ ready(<<"quit\r\n">>, State) ->
     {stop, normal, State};
 
 ready(Data, State) when is_binary(Data) ->
-    process_json_data(Data, State#state.principal),
-    {next_state, ready, State};
+    Buffer1 = State#state.buffer,
+    Buffer2 = <<Buffer1/binary, Data/binary>>,
+    Rest = process_json_data(Buffer2, State#state.principal),
+    State1 = State#state{buffer = Rest},
+    {next_state, ready, State1};
 
 ready({send_message, Message}, State) when is_list(Message) ->
     MessageBin = list_to_binary(Message),
@@ -163,14 +167,14 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 activate(Socket) ->
     inet:setopts(Socket, [{active, once}]).
 
-process_json_data(Data, Principal) when is_binary(Data) ->
-    SplitData = binary:split(Data, <<0>>, [global, trim]),
-    do_process_json_data(SplitData, Principal).
+process_json_data(Buffer, Principal) when is_binary(Buffer) ->
+    Rest = binary_utils:process_message(Buffer,
+					fun(Message) ->
+						do_process_json_data(Message,Principal)
+					end),
+    Rest.
 
-do_process_json_data([], Principal) ->
-    ok;
-
-do_process_json_data([Data|Tail], Principal) ->
+do_process_json_data(Data, Principal) ->
     JsonData =  rfc4627:decode(Data),
     case JsonData of
 	    {ok, Json, _R} ->
@@ -180,8 +184,7 @@ do_process_json_data([Data|Tail], Principal) ->
 		       EventVO#event_vo.type,
 		       EventVO#event_vo.data]),
 		ok;
-	    {error, Reason} ->
+	    {error, _Reason} ->
 		%% TODO: Send error message to client
 		ok
-    end,
-    do_process_json_data(Tail, Principal).
+    end.

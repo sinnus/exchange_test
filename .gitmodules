@@ -1,0 +1,3 @@
+[submodule "deps/erlang-utils"]
+	path = deps/erlang-utils
+	url = git://github.com/sinnus/erlang-utils.git
