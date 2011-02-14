@@ -63,35 +63,38 @@ init([Socket]) ->
 				    buffer = <<>>}}.
 
 wait_for_principal(Data, State) when is_binary(Data) ->
-    gen_fsm:cancel_timer(State#state.tref),
-    LoginJsonData =  try
-			 rfc4627:decode(Data)
-		     catch
-			 error:Reason ->
-			     error_logger:info_msg("Couldn't parse json data. Reason: ~p~n", [Reason]),
-			     undefined
-		     end,
-    case LoginJsonData of
-	{ok, JsonData, _R} ->
-	    LoginVO = ?RFC4627_TO_RECORD(login_vo, JsonData),
-	    Login =  LoginVO#login_vo.login,
-	    Password = LoginVO#login_vo.password,
-	    case auth_module:check_principal(Login, Password) of
-		true ->
-		    NewState = State#state{principal = Login},
-		    tcp_connection_manager:add_principal_connection(Login, self()),
-
-                    gen_tcp:send(State#state.socket, <<"{\"type\": \"Logon\", \"data\": null}",0>>),
-
-		    {next_state, ready, NewState};
-		false ->
-		    error_logger:info_msg("Wrong login:~p~n", [Login]),
-		    {stop, normal, State}
-	    end;
-	{error, _Reason} ->
-	    {stop, normal, State};
-	undefined ->
-	    {stop, normal, State}
+    Buffer1 = State#state.buffer,
+    Buffer2 = <<Buffer1/binary, Data/binary>>,
+    {Bin, Rest} = binary_utils:decode_string(Buffer2),
+    State1 = State#state{buffer = Rest},
+    case Bin of
+	<<>> ->
+	    {next_state, wait_for_principal, State1};
+	_ ->
+	    gen_fsm:cancel_timer(State1#state.tref),
+	    LoginJsonData =  rfc4627:decode(Bin),
+	    case LoginJsonData of
+		{ok, JsonData, _R} ->
+		    LoginVO = ?RFC4627_TO_RECORD(login_vo, JsonData),
+		    Login =  LoginVO#login_vo.login,
+		    Password = LoginVO#login_vo.password,
+		    case auth_module:check_principal(Login, Password) of
+			true ->
+			    State2 = State1#state{principal = Login},
+			    tcp_connection_manager:add_principal_connection(Login, self()),
+			    
+			    gen_tcp:send(State1#state.socket, <<"{\"type\": \"Logon\", \"data\": null}",0>>),
+			    
+			    {next_state, ready, State2};
+			false ->
+			    error_logger:info_msg("Wrong login:~p~n", [Login]),
+			    {stop, normal, State1}
+		    end;
+		{error, _Reason} ->
+		    {stop, normal, State1};
+		undefined ->
+		    {stop, normal, State1}
+	    end
     end;
 
 wait_for_principal(_Data, State) ->
