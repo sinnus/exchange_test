@@ -62,6 +62,14 @@ init([Socket]) ->
 				    tref = TRef,
 				    buffer = <<>>}}.
 
+wait_for_principal(<<"<policy-file-request/>", 0>>, State) ->
+    gen_tcp:send(State#state.socket, <<"<?xml version=\"1.0\" ?>  
+   <cross-domain-policy> 
+   <site-control permitted-cross-domain-policies=\"all\" secure=\"false\" />  
+   <allow-access-from domain=\"*\" to-ports=\"*\" secure=\"false\" />  
+   </cross-domain-policy>",0>>),
+    {stop, normal, State};
+
 wait_for_principal(Data, State) when is_binary(Data) ->
     Buffer1 = State#state.buffer,
     Buffer2 = <<Buffer1/binary, Data/binary>>,

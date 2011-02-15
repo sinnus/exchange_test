@@ -54,6 +54,9 @@
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.managers.PopUpManager;
+			import flash.events.SecurityErrorEvent;	
+			import flash.net.*;
+
 			private var socket:XMLSocket;
 			
 			[Bindable]
@@ -62,23 +65,35 @@
 			private var _top10SellRequests:ArrayCollection = new ArrayCollection();
 			[Bindable]
 			private var _transactions:ArrayCollection = new ArrayCollection();
+			private var _username:String;
+
 			
 			private function onLogin():void
 			{
-				var username:String = usernameTextArea.text;
-				if (username == "") {
+				_username = usernameTextArea.text;
+				if (_username == "") {
 					Alert.show("Введите имя пользователя");
 					return;
 				}
-				
 				socket=new XMLSocket();				
 				socket.addEventListener(DataEvent.DATA, handleData);
+				socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, handleSecurityError);
+				socket.addEventListener(Event.CONNECT, handleConnect);
 				socket.connect("localhost", 9234);
+			}
+
+			private function handleConnect(event:Event):void
+			{
 				var loginObject:Object = new Object();
-				loginObject.login = username;
+				loginObject.login = _username;
 				loginObject.password = "password";
 				socket.send(JSON.encode(loginObject));
 				viewStack.selectedIndex = 1;
+			}
+
+			private function handleSecurityError(event:Event):void
+			{
+				Alert.show("SecurityError: " + event.toString());
 			}
 			
 			private function onAddRequest():void {
